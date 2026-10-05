@@ -17,3 +17,4 @@ snapshots.json
 *_cache.json
 *.pem
 *.key
+_ref/
