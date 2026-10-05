@@ -33,18 +33,7 @@ Phase 2: 자연수의 구성 — 무(無)에서 수를 만들기
 - 무한 공리: {0, 1, 2, 3, ...} 전체가 집합으로 존재
 """
 
-from phase01_zfc_axioms import sys
-
-def _ask(prompt):
-    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
-    if not sys.stdin.isatty():
-        print(prompt + "(비대화형 실행이라 건너뜀)")
-        return "q"
-    try:
-        return input(prompt)
-    except EOFError:
-        return "q"
-import AxiomOfPairing  # 순서쌍 구성에 사용
+from phase01_zfc_axioms import AxiomOfPairing  # 순서쌍 구성에 사용
 
 
 # ============================================================================
@@ -316,6 +305,19 @@ def demonstrate_induction():
 # ============================================================================
 #  인터랙티브 데모
 # ============================================================================
+
+
+def _ask(prompt):
+    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
+    import sys
+    if not sys.stdin.isatty():
+        print(prompt + "(비대화형 실행이라 건너뜀)")
+        return "q"
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
+
 
 if __name__ == "__main__":
     print("╔══════════════════════════════════════════════════════════╗")

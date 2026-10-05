@@ -20,17 +20,6 @@ Phase 8: 기초 해석학 — 극한과 연속성
     실수의 완비성 (Phase 6) → 극한의 존재 → 연속성 → 미분
 """
 
-import sys
-
-def _ask(prompt):
-    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
-    if not sys.stdin.isatty():
-        print(prompt + "(비대화형 실행이라 건너뜀)")
-        return "q"
-    try:
-        return input(prompt)
-    except EOFError:
-        return "q"
 import math
 
 
@@ -327,6 +316,19 @@ def visualize_epsilon_band(seq_formula, L, name, epsilons=None):
 # ============================================================================
 #  인터랙티브 데모
 # ============================================================================
+
+
+def _ask(prompt):
+    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
+    import sys
+    if not sys.stdin.isatty():
+        print(prompt + "(비대화형 실행이라 건너뜀)")
+        return "q"
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
+
 
 if __name__ == "__main__":
     print("╔══════════════════════════════════════════════════════════╗")

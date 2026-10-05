@@ -728,6 +728,19 @@ def summarize():
 #  인터랙티브 데모
 # ============================================================================
 
+
+def _ask(prompt):
+    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
+    import sys
+    if not sys.stdin.isatty():
+        print(prompt + "(비대화형 실행이라 건너뜀)")
+        return "q"
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
+
+
 if __name__ == "__main__":
     print("╔══════════════════════════════════════════════════════════╗")
     print("║  Phase 1: ZFC 공리계 — 집합의 세계를 여는 규칙들       ║")
