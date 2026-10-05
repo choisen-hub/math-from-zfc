@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>math-from-zfc — ZFC 공리로부터 수학 구성하기</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #d2a8ff;
+    --accent4: #f0883e;
+    --accent5: #ff7b72;
+    --pink: #ffb3ba;
+    --orange: #ffdfba;
+    --yellow: #ffffba;
+    --green: #baffc9;
+    --blue: #bae1ff;
+    --purple: #d4baff;
+    --rose: #ffd4e5;
+    --teal: #d4f0f0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 20px 0; z-index: 100;
+  }
+  nav h2 {
+    font-size: 14px; color: var(--accent);
+    padding: 0 20px; margin-bottom: 12px;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  nav a {
+    display: block; padding: 8px 20px;
+    color: var(--text2); text-decoration: none;
+    font-size: 14px; border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  nav a:hover, nav a.active {
+    color: var(--text); background: var(--surface2);
+    border-left-color: var(--accent);
+  }
+  nav .phase-num {
+    display: inline-block; width: 22px; height: 22px;
+    border-radius: 50%; text-align: center; line-height: 22px;
+    font-size: 11px; font-weight: 700; margin-right: 8px;
+    background: var(--border); color: var(--text);
+  }
+  /* MAIN */
+  main {
+    margin-left: 260px; max-width: 900px; padding: 40px 60px 100px;
+  }
+  /* HERO */
+  .hero {
+    text-align: center; padding: 60px 0 40px;
+    border-bottom: 1px solid var(--border); margin-bottom: 50px;
+  }
+  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 12px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--text2); font-size: 18px; max-width: 600px; margin: 0 auto; }
+  /* ROADMAP */
+  .roadmap {
+    display: flex; flex-direction: column; gap: 4px;
+    margin: 30px 0 40px; padding: 24px; background: var(--surface);
+    border-radius: 12px; border: 1px solid var(--border);
+  }
+  .roadmap-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 6px 0; font-size: 14px;
+  }
+  .roadmap-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .roadmap-line {
+    width: 2px; height: 16px; margin-left: 4px;
+    background: var(--border);
+  }
+  /* SECTIONS */
+  section {
+    margin-bottom: 60px; scroll-margin-top: 20px;
+  }
+  section > h2 {
+    font-size: 26px; font-weight: 700; margin-bottom: 8px;
+    padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  }
+  section > h2 .phase-badge {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px; margin-right: 10px;
+    vertical-align: middle; color: #000;
+  }
+  .subtitle { color: var(--text2); font-size: 16px; margin-bottom: 24px; }
+  h3 {
+    font-size: 20px; font-weight: 600; margin: 30px 0 12px;
+    color: var(--accent3);
+  }
+  h4 {
+    font-size: 16px; font-weight: 600; margin: 20px 0 8px;
+    color: var(--accent4);
+  }
+  p { margin-bottom: 14px; }
+  /* CARDS */
+  .axiom-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 16px 0;
+  }
+  .axiom-card h4 {
+    margin-top: 0; font-size: 18px; color: var(--accent);
+  }
+  .axiom-card .formal {
+    font-family: 'Fira Code', 'Menlo', monospace;
+    background: var(--surface2); padding: 10px 14px;
+    border-radius: 6px; margin: 10px 0; font-size: 14px;
+    color: var(--accent3); border-left: 3px solid var(--accent3);
+  }
+  .axiom-card .why {
+    background: rgba(63,185,80,0.08);
+    border-left: 3px solid var(--accent2);
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+    margin: 10px 0; font-size: 14px;
+  }
+  .axiom-card .counterfactual {
+    background: rgba(255,123,114,0.08);
+    border-left: 3px solid var(--accent5);
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+    margin: 10px 0; font-size: 14px;
+  }
+  .examples {
+    background: var(--surface2); border-radius: 6px;
+    padding: 12px 16px; margin: 10px 0; font-size: 14px;
+  }
+  .examples li { margin: 4px 0; list-style: none; }
+  .examples li::before { content: "→ "; color: var(--accent); font-weight: 700; }
+  /* CODE BLOCKS */
+  pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px;
+    overflow-x: auto; font-size: 14px;
+    font-family: 'Fira Code', 'Menlo', monospace;
+    margin: 14px 0; line-height: 1.6;
+  }
+  code {
+    font-family: 'Fira Code', 'Menlo', monospace;
+    background: var(--surface2); padding: 2px 6px;
+    border-radius: 4px; font-size: 14px;
+  }
+  pre code { background: none; padding: 0; }
+  .kw { color: var(--accent5); }
+  .str { color: var(--accent2); }
+  .cm { color: var(--text2); }
+  .num { color: var(--accent4); }
+  .fn { color: var(--accent3); }
+  /* TABLE */
+  table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left; padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  th { background: var(--surface2); color: var(--accent); font-weight: 600; }
+  td { background: var(--surface); }
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    align-items: center; justify-content: center;
+    margin: 20px 0; font-size: 15px;
+  }
+  .flow-box {
+    padding: 8px 16px; border-radius: 8px;
+    font-weight: 600; color: #000; font-size: 14px;
+  }
+  .flow-arrow { color: var(--text2); font-size: 20px; }
+  /* HIGHLIGHT BOXES */
+  .insight {
+    background: rgba(88,166,255,0.08);
+    border-left: 3px solid var(--accent);
+    padding: 14px 18px; border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .pattern {
+    background: rgba(210,168,255,0.08);
+    border-left: 3px solid var(--accent3);
+    padding: 14px 18px; border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .meta {
+    background: rgba(240,136,62,0.08);
+    border-left: 3px solid var(--accent4);
+    padding: 14px 18px; border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  /* INTERACTIVE DEMO */
+  .demo-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin: 16px 0;
+  }
+  .demo-box h4 { color: var(--accent2); margin-top: 0; }
+  .demo-input {
+    display: flex; gap: 10px; margin: 12px 0;
+  }
+  .demo-input input {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 6px;
+    font-size: 14px; width: 120px;
+    font-family: 'Fira Code', monospace;
+  }
+  .demo-input input:focus { outline: none; border-color: var(--accent); }
+  .demo-input button {
+    background: var(--accent); color: #000; border: none;
+    padding: 8px 18px; border-radius: 6px;
+    font-weight: 600; cursor: pointer; font-size: 14px;
+  }
+  .demo-input button:hover { opacity: 0.85; }
+  .demo-output {
+    font-family: 'Fira Code', monospace; font-size: 13px;
+    background: var(--surface2); padding: 14px;
+    border-radius: 6px; min-height: 40px;
+    white-space: pre-wrap; color: var(--accent2);
+  }
+  /* MOBILE */
+  @media (max-width: 900px) {
+    nav { display: none; }
+    main { margin-left: 0; padding: 20px; }
+  }
+  /* PROOF */
+  .proof {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px 20px; margin: 14px 0;
+  }
+  .proof-title { font-weight: 700; color: var(--accent4); margin-bottom: 8px; }
+  .qed { text-align: right; color: var(--accent2); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<nav>
+  <h2>math-from-zfc</h2>
+  <a href="#hero"><span class="phase-num" style="background:var(--accent)">~</span> 개요</a>
+  <a href="#phase1"><span class="phase-num" style="background:var(--pink)">1</span> ZFC 공리계</a>
+  <a href="#phase2"><span class="phase-num" style="background:var(--orange)">2</span> 자연수</a>
+  <a href="#phase3"><span class="phase-num" style="background:var(--yellow)">3</span> 산술</a>
+  <a href="#phase4"><span class="phase-num" style="background:var(--green)">4</span> 정수</a>
+  <a href="#phase5"><span class="phase-num" style="background:var(--blue)">5</span> 유리수</a>
+  <a href="#phase6"><span class="phase-num" style="background:var(--purple)">6</span> 실수</a>
+  <a href="#phase7"><span class="phase-num" style="background:var(--rose)">7</span> 대수 구조</a>
+  <a href="#phase8"><span class="phase-num" style="background:var(--teal)">8</span> 해석학</a>
+  <a href="#phase9"><span class="phase-num" style="background:var(--text2)">9</span> 조감도</a>
+</nav>
+
+<main>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<div class="hero" id="hero">
+  <h1><span>ZFC</span> 공리로부터 수학 구성하기</h1>
+  <p>공집합 하나로부터 자연수, 정수, 유리수, 실수, 그리고 해석학까지 — 수학이라는 건물의 기초부터 지붕까지 한 걸음씩</p>
+</div>
+
+<div class="roadmap">
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--pink)"></div> Phase 1: ZFC 공리계 — 집합의 세계를 여는 규칙들</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--orange)"></div> Phase 2: 자연수의 구성 — 무(無)에서 수를 만들기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--yellow)"></div> Phase 3: 자연수의 산술 — 덧셈과 곱셈을 정의하기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--green)"></div> Phase 4: 정수의 구성 — 뺄셈의 한계를 넘기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--blue)"></div> Phase 5: 유리수의 구성 — 나눗셈의 한계를 넘기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--purple)"></div> Phase 6: 실수의 구성 — 유리수의 구멍을 메우기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--rose)"></div> Phase 7: 대수 구조 — 반복되는 패턴을 추상화하기</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--teal)"></div> Phase 8: 기초 해석학 — 극한과 연속성</div>
+  <div class="roadmap-line"></div>
+  <div class="roadmap-item"><div class="roadmap-dot" style="background:var(--text2)"></div> Phase 9: 전체 조감도 — 메타 수준의 성찰</div>
+</div>
+
+<!-- ═══════════════════ PHASE 1 ═══════════════════ -->
+<section id="phase1">
+<h2><span class="phase-badge" style="background:var(--pink)">Phase 1</span> ZFC 공리계</h2>
+<p class="subtitle">집합의 세계를 여는 규칙들</p>
+
+<p>수학의 모든 것을 세우려면 출발점이 필요합니다. ZFC는 <strong>두 개의 원초적 개념</strong>에서 출발합니다:</p>
+<ul style="margin: 10px 0 14px 20px;">
+  <li><strong>집합</strong>(set) — 정의하지 않는 기본 개념</li>
+  <li><strong>원소 관계</strong>(∈) — "x는 A의 원소이다"</li>
+</ul>
+<p>이 두 개의 개념과 <strong>9개의 공리</strong>로부터 현대 수학의 거의 모든 것이 구성됩니다.</p>
+
+<h3>역사적 맥락</h3>
+<p>칸토어(Cantor)의 소박한 집합론은 "임의의 성질 P에 대해 {x : P(x)}는 집합이다"를 허용했습니다. 1901년, 러셀(Russell)은 이것이 모순을 낳음을 발견했습니다:</p>
+<pre>R = {x : x ∉ x}
+R ∈ R이면 → R ∉ R (정의에 의해) → 모순!
+R ∉ R이면 → R ∈ R (정의에 의해) → 모순!</pre>
+<p>체르멜로(Zermelo)가 1908년에 제한된 공리적 체계를 제안하여 역설을 피했고, 프렝켈(Fraenkel)이 보강하여 오늘날의 ZFC가 완성되었습니다.</p>
+
+<!-- 공리 1 -->
+<div class="axiom-card">
+  <h4>1. 외연 공리 (Axiom of Extensionality)</h4>
+  <div class="formal">∀A ∀B [ (∀x, x ∈ A ⟺ x ∈ B) → A = B ]</div>
+  <p><strong>"두 집합이 같은 원소를 가지면 같다."</strong></p>
+  <p>집합의 정체성은 오직 원소에 의해 결정됩니다. 정의 방식이나 나열 순서는 무관합니다.</p>
+  <ul class="examples">
+    <li>{1, 2, 3} = {3, 1, 2} = {1, 2, 3, 2, 1}</li>
+    <li>{짝수인 소수} = {2} (정의 방식이 달라도 원소가 같으면 같다)</li>
+  </ul>
+  <div class="counterfactual">이 공리가 없으면? {1,2,3}과 {3,1,2}가 같은 집합인지 판단할 근거가 없습니다.</div>
+</div>
+
+<!-- 공리 2 -->
+<div class="axiom-card">
+  <h4>2. 공집합 공리 (Axiom of Empty Set)</h4>
+  <div class="formal">∃∅ ∀x, x ∉ ∅</div>
+  <p><strong>"원소가 하나도 없는 집합이 존재한다."</strong></p>
+  <p>"아무것도 없음"이 존재해야 합니다! 공집합 ∅은 <strong>모든 것의 시작점</strong>입니다. Phase 2에서 이 ∅로부터 모든 자연수를 구성합니다.</p>
+  <ul class="examples">
+    <li>∅ = {} (원소 0개)</li>
+    <li>∅ ≠ {∅} — 공집합과 "공집합을 담은 집합"은 다릅니다! ({∅}는 원소가 1개)</li>
+  </ul>
+  <div class="counterfactual">이 공리가 없으면? 출발점이 없습니다. 자연수를 구성할 씨앗이 없습니다.</div>
+</div>
+
+<!-- 공리 3 -->
+<div class="axiom-card">
+  <h4>3. 짝 공리 (Axiom of Pairing)</h4>
+  <div class="formal">∀a ∀b ∃C ∀x [ x ∈ C ⟺ (x = a ∨ x = b) ]</div>
+  <p><strong>"임의의 두 집합 a, b에 대해 {a, b}가 존재한다."</strong></p>
+  <p>두 대상을 "하나로 묶는" 능력을 보장합니다. 이것으로 <strong>순서쌍</strong>을 구성합니다:</p>
+  <div class="formal">(a, b) = {{a}, {a, b}} &nbsp;&nbsp;&nbsp; (쿠라토프스키 정의)</div>
+  <p>순서쌍이 없으면 함수를 정의할 수 없고, 함수가 없으면 수학의 대부분이 무너집니다.</p>
+  <div class="counterfactual">이 공리가 없으면? {∅}조차 만들 수 없어 자연수 1을 구성할 수 없습니다.</div>
+</div>
+
+<!-- 공리 4 -->
+<div class="axiom-card">
+  <h4>4. 합집합 공리 (Axiom of Union)</h4>
+  <div class="formal">∀F ∃U ∀x [ x ∈ U ⟺ ∃A(A ∈ F ∧ x ∈ A) ]</div>
+  <p><strong>"집합들의 집합이 주어지면, 모든 원소를 합칠 수 있다."</strong></p>
+  <p>후계자 함수 <code>S(n) = n ∪ {n}</code>에서 합집합 연산이 필수적입니다.</p>
+  <ul class="examples">
+    <li>∪{{1,2}, {2,3}, {3,4}} = {1, 2, 3, 4}</li>
+    <li>S(2) = {0,1} ∪ {2} = {0,1,2} = 3</li>
+  </ul>
+  <div class="counterfactual">이 공리가 없으면? n ∪ {n}을 만들 수 없어 후계자를 구성할 수 없습니다.</div>
+</div>
+
+<!-- 공리 5 -->
+<div class="axiom-card">
+  <h4>5. 멱집합 공리 (Axiom of Power Set)</h4>
+  <div class="formal">∀A ∃P ∀B [ B ∈ P ⟺ B ⊆ A ]</div>
+  <p><strong>"어떤 집합의 모든 부분집합을 모은 집합이 존재한다."</strong></p>
+  <p>|A| = n이면 |P(A)| = 2<sup>n</sup>. 칸토어가 증명한 것: |A| &lt; |P(A)| — <strong>무한에도 크기가 다른 단계가 있습니다.</strong></p>
+  <ul class="examples">
+    <li>P(∅) = {∅} — 크기 1</li>
+    <li>P({a}) = {∅, {a}} — 크기 2</li>
+    <li>P({a,b}) = {∅, {a}, {b}, {a,b}} — 크기 4</li>
+  </ul>
+  <div class="counterfactual">이 공리가 없으면? 실수를 구성할 수 없고, 대각선 논증도 불가능합니다.</div>
+</div>
+
+<!-- 공리 6 -->
+<div class="axiom-card">
+  <h4>6. 분류 공리꼴 (Axiom Schema of Separation)</h4>
+  <div class="formal">∀A ∃B ∀x [ x ∈ B ⟺ (x ∈ A ∧ φ(x)) ]</div>
+  <p><strong>"이미 있는 집합에서 조건을 만족하는 원소만 골라낼 수 있다."</strong></p>
+  <p>러셀의 역설을 차단하는 핵심 장치입니다:</p>
+  <div class="pattern">
+    소박한 집합론: {x : φ(x)} — <strong>아무 조건이나</strong> 집합을 만든다 → 역설!<br>
+    ZFC: {x ∈ A : φ(x)} — <strong>기존 집합에서</strong> 걸러낸다 → 안전!
+  </div>
+</div>
+
+<!-- 공리 7 -->
+<div class="axiom-card">
+  <h4>7. 치환 공리꼴 (Axiom Schema of Replacement)</h4>
+  <div class="formal">A가 집합이고 F가 함수이면, F[A] = {F(x) : x ∈ A}도 집합이다</div>
+  <p><strong>"집합의 각 원소를 함수로 변환한 결과도 집합이다."</strong></p>
+  <p>Phase 3에서 덧셈/곱셈의 재귀적 정의가 실제로 함수를 만들어내는 것을 보장합니다.</p>
+</div>
+
+<!-- 공리 8 -->
+<div class="axiom-card">
+  <h4>8. 무한 공리 (Axiom of Infinity)</h4>
+  <div class="formal">∃I [ ∅ ∈ I ∧ ∀x(x ∈ I → x ∪ {x} ∈ I) ]</div>
+  <p><strong>"자연수 전체를 포함하는 무한 집합이 존재한다."</strong></p>
+  <p>다른 공리들로 0, 1, 2, ... 를 각각 만들 수 있지만, {0, 1, 2, 3, ...} <strong>전체</strong>가 하나의 집합인지는 별도의 공리가 필요합니다.</p>
+  <div class="insight">"각각의 n을 만들 수 있다" ≠ "전부를 모은 것이 존재한다" — 유한 → 무한의 점프에는 별도의 공리가 필요합니다.</div>
+</div>
+
+<!-- 공리 9 -->
+<div class="axiom-card">
+  <h4>9. 선택 공리 (Axiom of Choice)</h4>
+  <div class="formal">∀F [ (∀A ∈ F, A ≠ ∅) → ∃f: F → ∪F, ∀A ∈ F, f(A) ∈ A ]</div>
+  <p><strong>"비어있지 않은 집합들의 모임에서, 각 집합에서 하나씩 고를 수 있다."</strong></p>
+  <p>직관적으로 당연해 보이지만 논란이 많았습니다. 바나흐-타르스키 역설: 선택 공리를 인정하면 하나의 구를 분해하여 같은 크기의 구 <strong>두 개</strong>를 만들 수 있습니다!</p>
+  <div class="meta">이 프로그램의 Phase 2-8에서는 선택 공리를 명시적으로 사용하지 않습니다.</div>
+</div>
+
+<div class="insight" style="margin-top:30px;">
+  <strong>요약:</strong> 이 9개의 공리가 수학이라는 건물의 기초 전부입니다. 이 위에 자연수, 정수, 유리수, 실수, 함수, 공간을 모두 세울 것입니다.
+</div>
+</section>
+
+<!-- ═══════════════════ PHASE 2 ═══════════════════ -->
+<section id="phase2">
+<h2><span class="phase-badge" style="background:var(--orange)">Phase 2</span> 자연수의 구성</h2>
+<p class="subtitle">무(無)에서 수를 만들기 — 폰 노이만 서수</p>
+
+<p>자연수는 직관적으로 당연한 것처럼 느껴지지만, ZFC에서는 그 존재를 <strong>구성</strong>해야 합니다. 놀랍게도 공집합 하나로 모든 자연수를 만들 수 있습니다!</p>
+
+<h3>폰 노이만 구성 (Von Neumann Construction)</h3>
+<pre>0 = ∅ = {}                             <span class="cm">← 아무것도 없음</span>
+1 = {∅} = {0}                          <span class="cm">← 0을 담은 집합</span>
+2 = {∅, {∅}} = {0, 1}                  <span class="cm">← 0과 1을 담은 집합</span>
+3 = {∅, {∅}, {∅, {∅}}} = {0, 1, 2}    <span class="cm">← 0, 1, 2를 담은 집합</span>
+...
+n+1 = n ∪ {n}                          <span class="cm">← 후계자 함수</span></pre>
+
+<div class="insight">
+  <strong>핵심 관찰:</strong> 각 자연수 n의 원소 개수가 정확히 n개입니다. 집합 자체가 자신의 "크기"를 인코딩합니다!
+</div>
+
+<h3>순서 관계의 우아함</h3>
+<p>폰 노이만 구성의 놀라운 성질:</p>
+<pre>n &lt; m  ⟺  n ∈ m    <span class="cm">← 원소 관계가 곧 엄격 순서!</span>
+n ≤ m  ⟺  n ⊆ m    <span class="cm">← 부분집합 관계가 곧 순서!</span></pre>
+<p>별도의 "순서" 개념을 정의할 필요 없이, 집합의 구조가 그대로 순서가 됩니다.</p>
+
+<!-- 인터랙티브 데모 -->
+<div class="demo-box">
+  <h4>인터랙티브: 폰 노이만 서수</h4>
+  <p>자연수를 입력하면 집합 표현을 보여줍니다.</p>
+  <div class="demo-input">
+    <input type="number" id="vn-input" value="3" min="0" max="8">
+    <button onclick="showVonNeumann()">구성하기</button>
+  </div>
+  <div class="demo-output" id="vn-output">3 = {∅, {∅}, {∅, {∅}}}
+즉, 3 = {0, 1, 2}
+원소 수: |3| = 3 (집합 자체가 크기를 인코딩!)</div>
+</div>
+
+<h3>사용된 ZFC 공리</h3>
+<table>
+  <tr><th>공리</th><th>역할</th></tr>
+  <tr><td>공집합 공리</td><td>0 = ∅의 존재</td></tr>
+  <tr><td>짝 공리</td><td>{n}을 구성하기 위해</td></tr>
+  <tr><td>합집합 공리</td><td>n ∪ {n}을 계산하기 위해</td></tr>
+  <tr><td>무한 공리</td><td>{0, 1, 2, ...} 전체가 집합으로 존재</td></tr>
+</table>
+
+<div class="meta">우리는 방금 ZFC의 공리 4개만으로 자연수 전체를 구성했습니다. 라이프니츠가 꿈꿨던 "무에서 수를 만들기"가 실제로 작동하는 것입니다.</div>
+</section>
+
+<!-- ═══════════════════ PHASE 3 ═══════════════════ -->
+<section id="phase3">
+<h2><span class="phase-badge" style="background:var(--yellow)">Phase 3</span> 자연수의 산술</h2>
+<p class="subtitle">덧셈과 곱셈을 정의하기</p>
+
+<p>자연수라는 대상을 만들었으니, 이제 연산을 정의합니다. "1 + 1 = 2"가 참인 이유를 공리적으로 정당화합니다.</p>
+
+<h3>덧셈의 재귀적 정의</h3>
+<pre>n + 0    = n           <span class="cm">← 기저 조건: 0을 더하면 변하지 않는다</span>
+n + S(m) = S(n + m)    <span class="cm">← 재귀 단계: 후계자를 더하면 결과의 후계자</span></pre>
+
+<p><strong>2 + 3의 계산 과정:</strong></p>
+<pre>2 + 3 = 2 + S(2)       <span class="cm">← 3 = S(2)</span>
+      = S(2 + 2)       <span class="cm">← 재귀 단계</span>
+      = S(2 + S(1))    <span class="cm">← 2 = S(1)</span>
+      = S(S(2 + 1))    <span class="cm">← 재귀 단계</span>
+      = S(S(2 + S(0))) <span class="cm">← 1 = S(0)</span>
+      = S(S(S(2 + 0))) <span class="cm">← 재귀 단계</span>
+      = S(S(S(2)))     <span class="cm">← 기저 조건</span>
+      = S(S(3)) = S(4) = <strong>5</strong></pre>
+
+<h3>곱셈의 재귀적 정의</h3>
+<pre>n × 0    = 0           <span class="cm">← 기저: 0을 곱하면 0</span>
+n × S(m) = n × m + n   <span class="cm">← 재귀: 덧셈의 반복</span></pre>
+
+<div class="pattern"><strong>패턴:</strong> 후계자 → 덧셈 → 곱셈. 각 연산은 이전 연산의 "반복 적용"입니다.</div>
+
+<h3>기본 성질 (귀납법으로 증명)</h3>
+<table>
+  <tr><th>성질</th><th>내용</th></tr>
+  <tr><td>교환법칙</td><td>n + m = m + n, &nbsp; n × m = m × n</td></tr>
+  <tr><td>결합법칙</td><td>(n + m) + k = n + (m + k), &nbsp; (n × m) × k = n × (m × k)</td></tr>
+  <tr><td>분배법칙</td><td>n × (m + k) = n × m + n × k</td></tr>
+  <tr><td>순서와 연산</td><td>n ≤ m ⟺ ∃k, n + k = m</td></tr>
+</table>
+
+<!-- 인터랙티브 데모 -->
+<div class="demo-box">
+  <h4>인터랙티브: 덧셈의 재귀적 계산</h4>
+  <div class="demo-input">
+    <input type="number" id="add-a" value="2" min="0" max="10" style="width:60px">
+    <span style="color:var(--text2); line-height:36px;">+</span>
+    <input type="number" id="add-b" value="3" min="0" max="10" style="width:60px">
+    <button onclick="showAddition()">계산하기</button>
+  </div>
+  <div class="demo-output" id="add-output"></div>
+</div>
+</section>
+
+<!-- ═══════════════════ PHASE 4 ═══════════════════ -->
+<section id="phase4">
+<h2><span class="phase-badge" style="background:var(--green)">Phase 4</span> 정수의 구성</h2>
+<p class="subtitle">뺄셈의 한계를 넘기 — 자연수 쌍으로 정수 만들기</p>
+
+<p>자연수에서 <strong>3 - 5</strong>는 정의되지 않습니다. 음수를 전제할 수 없으므로, 이미 가진 것(자연수)만으로 정수를 구성해야 합니다.</p>
+
+<h3>핵심 아이디어</h3>
+<div class="insight">
+  (a, b)라는 자연수 쌍을 <strong>"a - b를 의미하는 것"</strong>으로 해석합니다.<br>
+  뺄셈을 직접 하는 대신, "빼고 싶다는 의도"를 기록합니다.
+</div>
+
+<p>(3, 5)와 (0, 2)와 (1, 3)은 모두 같은 정수 -2를 의미합니다. 따라서 동치 관계가 필요합니다:</p>
+<div class="formal">(a, b) ~ (c, d) ⟺ a + d = b + c</div>
+
+<h4>왜 뺄셈이 아니라 덧셈으로 정의하는가?</h4>
+<p>뺄셈은 아직 정의되지 않았기 때문입니다! Phase 3에서 정의한 자연수 덧셈만 사용합니다.</p>
+
+<h3>동치류로서의 정수</h3>
+<pre>정수 -2 = {(0,2), (1,3), (2,4), (3,5), ...}  <span class="cm">← 모두 같은 정수</span>
+정수  0 = {(0,0), (1,1), (2,2), (3,3), ...}
+정수 +3 = {(3,0), (4,1), (5,2), (6,3), ...}</pre>
+
+<h3>연산 정의</h3>
+<pre>덧셈: (a,b) + (c,d) = (a+c, b+d)
+곱셈: (a,b) × (c,d) = (ac+bd, ad+bc)
+역원: -(a,b) = (b,a)
+<span class="cm">그리고 드디어...</span>
+뺄셈: a - b = a + (-b)    <span class="cm">← 우리가 뺄셈을 하려고 이 모든 것을 구성했다!</span></pre>
+
+<h3>자연수의 매장</h3>
+<p>자연수 n → 정수 (n, 0). 이 매장은 덧셈과 곱셈을 보존합니다. <strong>"자연수가 정수 안에 살고 있다."</strong></p>
+
+<div class="demo-box">
+  <h4>인터랙티브: 정수의 동치류</h4>
+  <div class="demo-input">
+    <input type="number" id="int-input" value="-2">
+    <button onclick="showIntegerClass()">동치류 보기</button>
+  </div>
+  <div class="demo-output" id="int-output"></div>
+</div>
+</section>
+
+<!-- ═══════════════════ PHASE 5 ═══════════════════ -->
+<section id="phase5">
+<h2><span class="phase-badge" style="background:var(--blue)">Phase 5</span> 유리수의 구성</h2>
+<p class="subtitle">나눗셈의 한계를 넘기 — 정수 쌍으로 유리수 만들기</p>
+
+<p>정수에서 <strong>3 ÷ 2</strong>는 정의되지 않습니다. Phase 4와 <strong>정확히 같은 전략</strong>을 씁니다:</p>
+
+<div class="pattern">
+  <strong>같은 패턴의 반복!</strong><br><br>
+  <table style="margin:0; font-size:14px;">
+    <tr><th>단계</th><th>동치 관계</th><th>우회 방법</th></tr>
+    <tr><td>정수 (Phase 4)</td><td>(a,b) ~ (c,d) ⟺ a + d = b + c</td><td>덧셈으로 뺄셈을 우회</td></tr>
+    <tr><td>유리수 (Phase 5)</td><td>(a,b) ~ (c,d) ⟺ a × d = b × c</td><td>곱셈으로 나눗셈을 우회</td></tr>
+  </table>
+</div>
+
+<h3>체(Field)의 구조</h3>
+<p>유리수 ℚ는 <strong>사칙연산이 자유롭게 가능한 첫 번째 체계</strong>입니다! (0으로 나누는 것만 제외)</p>
+
+<h3>유리수의 조밀성</h3>
+<p>두 유리수 사이에 항상 또 다른 유리수가 있습니다. <em>"유리수는 빈틈없이 촘촘해 보입니다"</em></p>
+
+<h3>√2의 비합리성 증명</h3>
+<div class="proof">
+  <div class="proof-title">정리: √2는 유리수가 아니다 (귀류법)</div>
+  <p>√2 = a/b (a, b는 서로소)라고 가정하면:</p>
+  <pre style="border:none;padding:8px 0;margin:0">a² = 2b²
+→ a²이 짝수 → a가 짝수 → a = 2k
+→ (2k)² = 2b² → 4k² = 2b² → b² = 2k²
+→ b²이 짝수 → b도 짝수
+→ a, b 모두 짝수 → 서로소에 모순!</pre>
+  <div class="qed">∎</div>
+</div>
+<div class="meta"><strong>유리수에는 보이지 않는 구멍이 있습니다.</strong> 이 구멍을 메우는 것이 Phase 6의 목표입니다.</div>
+</section>
+
+<!-- ═══════════════════ PHASE 6 ═══════════════════ -->
+<section id="phase6">
+<h2><span class="phase-badge" style="background:var(--purple)">Phase 6</span> 실수의 구성</h2>
+<p class="subtitle">유리수의 구멍을 메우기 — 데데킨트 절단</p>
+
+<p>유리수는 조밀하지만 "구멍"이 있습니다. 실수는 이 구멍을 전부 메운 체계입니다.</p>
+
+<h3>데데킨트 절단 (Dedekind Cut)</h3>
+<div class="insight">
+  <strong>"유리수 전체를 두 부분으로 자르는 방법이 곧 실수이다."</strong><br><br>
+  절단 = 유리수 전체를 두 집합 (L, R)로 나누는 것<br>
+  조건: L의 모든 원소 &lt; R의 모든 원소, L에 최대원소 없음
+</div>
+
+<h4>유리수 3/2의 절단</h4>
+<pre>L = {q ∈ ℚ : q &lt; 3/2}
+R = {q ∈ ℚ : q ≥ 3/2}
+→ R에 최소원소 3/2가 <strong>있음</strong>. 유리수에 해당하는 절단.</pre>
+
+<h4>√2의 절단</h4>
+<pre>L = {q ∈ ℚ : q &lt; 0 또는 q² &lt; 2}
+R = {q ∈ ℚ : q &gt; 0 이고 q² ≥ 2}
+→ R에 최소원소가 <strong>없음!</strong> 무리수에 해당하는 절단.</pre>
+
+<h3>실수의 완비성 (상한 성질)</h3>
+<p><strong>"위로 유계인 비어있지 않은 실수 집합은 상한을 가진다."</strong></p>
+<p>유리수에서는 성립하지 않습니다: S = {q ∈ ℚ : q² &lt; 2}의 상한은 √2이지만, √2 ∉ ℚ!</p>
+<p>실수에서는 √2 ∈ ℝ이므로 상한이 존재합니다. <strong>이것이 해석학 전체의 토대입니다.</strong></p>
+
+<h3>칸토어의 대각선 논증</h3>
+<p><strong>실수는 자연수보다 "더 많습니다": |ℕ| &lt; |ℝ|</strong></p>
+<pre>[0,1)의 실수를 나열했다고 가정:
+  r₁ = 0.<strong style="color:var(--accent5)">3</strong> 1 4 1 5 ...
+  r₂ = 0. 7 <strong style="color:var(--accent5)">1</strong> 8 2 8 ...
+  r₃ = 0. 2 8 <strong style="color:var(--accent5)">1</strong> 8 2 ...
+  r₄ = 0. 1 4 1 <strong style="color:var(--accent5)">4</strong> 2 ...
+
+대각선: 3, 1, 1, 4, ...
+새 수:  4, 2, 2, 5, ... → x = 0.4225...
+
+x ≠ rₙ (모든 n에 대해 n번째 자리가 다름)
+→ 어떤 나열도 불완전하다!
+→ <strong>무한에도 크기가 다른 단계가 있다!</strong></pre>
+
+<div class="meta"><strong>연속체 가설:</strong> |ℕ|과 |ℝ| 사이에 다른 크기의 무한이 있는가? 괴델(1940)과 코헨(1963)이 증명: <em>이 질문은 ZFC로는 답할 수 없다!</em></div>
+
+<h3>전체 여정 회고</h3>
+<div class="flow">
+  <div class="flow-box" style="background:var(--pink)">∅</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:var(--orange)">ℕ</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:var(--green)">ℤ</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:var(--blue)">ℚ</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-box" style="background:var(--purple)">ℝ</div>
+</div>
+</section>
+
+<!-- ═══════════════════ PHASE 7 ═══════════════════ -->
+<section id="phase7">
+<h2><span class="phase-badge" style="background:var(--rose)">Phase 7</span> 대수 구조</h2>
+<p class="subtitle">반복되는 패턴을 추상화하기 — 군, 환, 체</p>
+
+<p>Phase 2-6에서 반복된 패턴: 집합 + 연산 + 결합법칙 + 항등원 + 역원. 이 패턴 자체를 연구하는 것이 <strong>추상대수학</strong>입니다.</p>
+
+<h3>군 (Group)</h3>
+<div class="axiom-card">
+  <p>집합 G와 연산 · 의 쌍 (G, ·)이 다음을 만족할 때:</p>
+  <ol style="margin: 8px 0 0 20px;">
+    <li><strong>결합법칙:</strong> (a · b) · c = a · (b · c)</li>
+    <li><strong>항등원:</strong> ∃e, e · a = a · e = a</li>
+    <li><strong>역원:</strong> ∀a, ∃a⁻¹, a · a⁻¹ = e</li>
+  </ol>
+  <ul class="examples" style="margin-top:12px;">
+    <li><strong>(ℤ, +)</strong> — Phase 4에서 구성! 항등원: 0, 역원: -n</li>
+    <li><strong>S₃</strong> — 정삼각형의 대칭군 (6개 원소, 비가환!)</li>
+    <li><strong>ℤ/nℤ</strong> — 시계 산술</li>
+  </ul>
+</div>
+
+<h3>환 (Ring)</h3>
+<p>덧셈 아벨군 + 곱셈 결합법칙 + 분배법칙. 예: <strong>(ℤ, +, ×)</strong> — Phase 4에서 구성한 것!</p>
+
+<h3>체 (Field)</h3>
+<p>환 + 곱셈 역원(0 제외). 예: <strong>ℚ</strong> (Phase 5), <strong>ℝ</strong> (Phase 6). <em>"체에서는 사칙연산이 자유롭다."</em></p>
+
+<h3>구조 보존 사상 (Homomorphism)</h3>
+<pre>ℕ ──→ ℤ ──→ ℚ ──→ ℝ
+n ↦ (n,0)  z ↦ z/1  q ↦ 절단
+
+각 매장은:
+  f(a + b) = f(a) + f(b)   <span class="cm">← 덧셈 보존</span>
+  f(a × b) = f(a) × f(b)   <span class="cm">← 곱셈 보존</span></pre>
+
+<div class="insight"><strong>추상화의 위력:</strong> "항등원은 유일하다"를 군 수준에서 한 번 증명하면, 모든 군에 자동으로 적용됩니다.</div>
+</section>
+
+<!-- ═══════════════════ PHASE 8 ═══════════════════ -->
+<section id="phase8">
+<h2><span class="phase-badge" style="background:var(--teal)">Phase 8</span> 기초 해석학</h2>
+<p class="subtitle">극한, 연속성, 미분 — 실수의 완비성이 열어주는 세계</p>
+
+<p>실수를 구성한 진짜 이유는 <strong>해석학</strong>을 하기 위해서입니다. 뉴턴과 라이프니츠의 미적분을 200년 후 코시와 바이어슈트라스가 ε-δ 정의로 엄밀화했습니다.</p>
+
+<h3>극한의 ε-N 정의</h3>
+<div class="formal">
+  lim(n→∞) aₙ = L &nbsp;⟺&nbsp; ∀ε &gt; 0, ∃N ∈ ℕ, ∀n &gt; N: |aₙ - L| &lt; ε
+</div>
+<p><em>"아무리 작은 오차 범위(ε)를 잡아도, 어느 시점(N) 이후로는 수열이 그 범위 안에 들어온다."</em></p>
+
+<h4>예시: aₙ = 1/n → 0</h4>
+<table>
+  <tr><th>ε</th><th>N</th><th>의미</th></tr>
+  <tr><td>0.1</td><td>10</td><td>n &gt; 10이면 1/n &lt; 0.1</td></tr>
+  <tr><td>0.01</td><td>100</td><td>n &gt; 100이면 1/n &lt; 0.01</td></tr>
+  <tr><td>0.001</td><td>1000</td><td>n &gt; 1000이면 1/n &lt; 0.001</td></tr>
+</table>
+
+<h3>단조수렴정리 (완비성 필수!)</h3>
+<div class="axiom-card">
+  <p><strong>단조증가이고 위로 유계인 수열은 수렴한다.</strong></p>
+  <div class="counterfactual">
+    유리수에서의 반례: aₙ = √2의 n자리 근사 (유리수)<br>
+    단조증가 ✓, 위로 유계 ✓, 하지만 극한 √2 ∉ ℚ!<br>
+    → <strong>실수의 완비성 없이는 이 정리가 성립하지 않습니다.</strong>
+  </div>
+</div>
+
+<h3>함수의 연속성 (ε-δ 정의)</h3>
+<div class="formal">
+  f가 x = a에서 연속 &nbsp;⟺&nbsp; ∀ε &gt; 0, ∃δ &gt; 0, ∀x: |x - a| &lt; δ → |f(x) - f(a)| &lt; ε
+</div>
+<p><em>"입력을 조금 바꾸면, 출력도 조금만 바뀐다."</em></p>
+
+<h3>미분</h3>
+<div class="formal">f'(x) = lim(h→0) [f(x+h) - f(x)] / h</div>
+
+<h4>예시: (x²)' = 2x</h4>
+<pre>f'(x) = lim(h→0) [(x+h)² - x²] / h
+      = lim(h→0) [2xh + h²] / h
+      = lim(h→0) (2x + h)
+      = <strong>2x</strong></pre>
+
+<p>의존 사슬: <code>ZFC 공리 → 실수(완비) → 극한 → 연속 → 미분</code></p>
+<div class="meta">f'(x) = 2x라는 간단한 결과 뒤에, ZFC로부터 시작된 긴 구성의 사슬이 있습니다.</div>
+</section>
+
+<!-- ═══════════════════ PHASE 9 ═══════════════════ -->
+<section id="phase9">
+<h2><span class="phase-badge" style="background:var(--text2);color:#fff">Phase 9</span> 전체 조감도</h2>
+<p class="subtitle">되돌아보기 — 우리가 무엇을 했고, 무엇이 남았는가</p>
+
+<h3>ZFC 공리 사용 추적표</h3>
+<table>
+  <tr><th>공리</th><th>사용 위치</th><th>역할</th></tr>
+  <tr><td>공집합</td><td>Phase 2</td><td>0 = ∅ — 자연수의 시작점</td></tr>
+  <tr><td>짝</td><td>Phase 2, 4, 5</td><td>후계자 구성, 순서쌍, 동치류</td></tr>
+  <tr><td>합집합</td><td>Phase 2</td><td>S(n) = n ∪ {n}</td></tr>
+  <tr><td>무한</td><td>Phase 2</td><td>ℕ 전체가 집합으로 존재</td></tr>
+  <tr><td>분류</td><td>Phase 4, 5, 6</td><td>동치류, 데데킨트 절단</td></tr>
+  <tr><td>멱집합</td><td>Phase 6</td><td>실수의 존재, 대각선 논증</td></tr>
+  <tr><td>치환</td><td>Phase 3</td><td>재귀적 정의의 정당화</td></tr>
+  <tr><td>외연</td><td>전체</td><td>집합의 동일성 판정</td></tr>
+  <tr><td>선택</td><td>—</td><td>이 프로그램에서는 명시적으로 불필요</td></tr>
+</table>
+
+<h3>반복된 패턴</h3>
+<div class="pattern">
+  <strong>1. "확장" 패턴:</strong> 이전 체계의 한계 → 쌍의 동치류 → 새 체계<br>
+  &nbsp;&nbsp; ℕ→ℤ: 뺄셈 불가 → 자연수 쌍의 동치류<br>
+  &nbsp;&nbsp; ℤ→ℚ: 나눗셈 불가 → 정수 쌍의 동치류<br>
+  &nbsp;&nbsp; ℚ→ℝ: 구멍 존재 → 데데킨트 절단<br><br>
+  <strong>2. "매장" 패턴:</strong> 이전 체계가 새 체계 안에 보존적으로 포함<br>
+  &nbsp;&nbsp; ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ<br><br>
+  <strong>3. "추상화" 패턴:</strong> 구체적 예시에서 공통 구조 추출 (군, 환, 체)
+</div>
+
+<h3>이 여정이 보여주지 못하는 것</h3>
+<ul style="margin-left:20px;">
+  <li><strong>괴델의 불완전성 (1931):</strong> ZFC 안에서 참이지만 증명 불가능한 명제가 존재합니다.</li>
+  <li><strong>연속체 가설:</strong> ZFC로는 답할 수 없는 질문이 있습니다.</li>
+  <li><strong>대안적 토대:</strong> 유형론(Lean, Coq), 범주론, 구성주의 등.</li>
+</ul>
+
+<h3 style="margin-top:40px;">추천 학습 경로</h3>
+<table>
+  <tr><th>분류</th><th>자료</th></tr>
+  <tr><td>집합론 입문</td><td>Halmos, <em>Naive Set Theory</em></td></tr>
+  <tr><td>ZFC 엄밀 전개</td><td>Enderton, <em>Elements of Set Theory</em></td></tr>
+  <tr><td>해석학</td><td>Abbott, <em>Understanding Analysis</em></td></tr>
+  <tr><td>무한의 이야기</td><td>Stillwell, <em>Roads to Infinity</em></td></tr>
+  <tr><td>기계 검증</td><td>Lean 4 + Mathlib (<em>Mathematics in Lean</em>)</td></tr>
+</table>
+
+<div class="insight" style="margin-top:40px; text-align:center; font-size:17px;">
+  수학이라는 건물의 기초(ZFC)에서 지붕(해석학)까지, 한 걸음씩 올라왔습니다.<br><br>
+  이 여정에서 가장 중요한 것:<br>
+  <strong>"왜?"라는 질문을 놓지 않는 것.</strong>
+</div>
+
+</section>
+
+</main>
+
+<!-- ═══════════════════ JavaScript ═══════════════════ -->
+<script>
+// 폰 노이만 서수 시각화
+function vonNeumannStr(n) {
+  if (n === 0) return '∅';
+  const parts = [];
+  for (let i = 0; i < n; i++) parts.push(vonNeumannStr(i));
+  return '{' + parts.join(', ') + '}';
+}
+
+function showVonNeumann() {
+  const n = Math.min(Math.max(parseInt(document.getElementById('vn-input').value) || 0, 0), 8);
+  const formal = vonNeumannStr(n);
+  const informal = n === 0 ? '∅' : '{' + Array.from({length:n},(_,i)=>i).join(', ') + '}';
+  let out = `${n} = ${formal}\n`;
+  out += `즉, ${n} = ${informal}\n`;
+  out += `원소 수: |${n}| = ${n} (집합 자체가 크기를 인코딩!)`;
+  if (n > 0) {
+    out += `\n\n순서 관계:`;
+    for (let i = 0; i < n; i++) out += `\n  ${i} ∈ ${n} (즉 ${i} < ${n})  ✓`;
+  }
+  document.getElementById('vn-output').textContent = out;
+}
+
+// 덧셈 재귀 계산
+function addRecursive(a, b, depth) {
+  const indent = '  '.repeat(depth);
+  if (b === 0) return { result: a, steps: [`${indent}${a} + 0 = ${a}  [기저: n + 0 = n]`] };
+  const steps = [`${indent}${a} + ${b} = ${a} + S(${b-1}) = S(${a} + ${b-1})`];
+  const sub = addRecursive(a, b - 1, depth + 1);
+  steps.push(...sub.steps);
+  const result = sub.result + 1;
+  steps.push(`${indent}= S(${sub.result}) = ${result}`);
+  return { result, steps };
+}
+
+function showAddition() {
+  const a = Math.min(Math.max(parseInt(document.getElementById('add-a').value) || 0, 0), 10);
+  const b = Math.min(Math.max(parseInt(document.getElementById('add-b').value) || 0, 0), 10);
+  const { result, steps } = addRecursive(a, b, 0);
+  let out = `${a} + ${b}의 재귀적 계산:\n\n`;
+  out += steps.join('\n');
+  out += `\n\n결과: ${a} + ${b} = ${result}`;
+  document.getElementById('add-output').textContent = out;
+}
+
+// 정수 동치류
+function showIntegerClass() {
+  const v = parseInt(document.getElementById('int-input').value) || 0;
+  const pairs = [];
+  for (let k = 0; k < 6; k++) {
+    if (v >= 0) pairs.push(`(${v+k}, ${k})`);
+    else pairs.push(`(${k}, ${-v+k})`);
+  }
+  let out = `정수 ${v >= 0 ? '+' : ''}${v}의 동치류:\n\n`;
+  out += pairs.join(' ~ ') + ' ~ ...\n\n';
+  out += `표준 대표원: ${v >= 0 ? `(${v}, 0)` : `(0, ${-v})`}\n`;
+  out += `역원: -(${v}) = ${-v}`;
+  document.getElementById('int-output').textContent = out;
+}
+
+// 네비게이션 활성화
+const navLinks = document.querySelectorAll('nav a');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const link = document.querySelector(`nav a[href="#${id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+document.querySelectorAll('section, .hero').forEach(s => observer.observe(s));
+
+// 초기화
+showAddition();
+</script>
+
+</body>
+</html>
