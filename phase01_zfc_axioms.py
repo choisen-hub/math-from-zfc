@@ -755,7 +755,7 @@ if __name__ == "__main__":
         print("  [A] 전체 보기")
         print("  [Q] 종료")
 
-        choice = input("\n선택: ").strip().upper()
+        choice = _ask("\n선택: ").strip().upper()
 
         if choice == 'Q':
             print("\n다음 Phase에서는 이 공리들을 사용하여")

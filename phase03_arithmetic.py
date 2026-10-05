@@ -20,7 +20,18 @@ Phase 2에서 자연수라는 대상을 만들었으니,
     치환 공리꼴이 이 모임이 집합(따라서 함수)임을 보장합니다.
 """
 
-from phase02_natural_numbers import NaturalNumber
+from phase02_natural_numbers import sys
+
+def _ask(prompt):
+    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
+    if not sys.stdin.isatty():
+        print(prompt + "(비대화형 실행이라 건너뜀)")
+        return "q"
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
+import NaturalNumber
 
 
 # ============================================================================
@@ -285,7 +296,7 @@ if __name__ == "__main__":
     print("=" * 60)
     while True:
         try:
-            user_input = input("\n두 자연수를 입력하세요 (예: 3 4, q: 종료): ").strip()
+            user_input = _ask("\n두 자연수를 입력하세요 (예: 3 4, q: 종료): ").strip()
             if user_input.lower() == 'q':
                 break
             parts = user_input.split()

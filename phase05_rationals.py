@@ -28,7 +28,18 @@ Phase 4에서 뺄셈 문제를 해결한 것과 **정확히 같은 전략**을 �
     이것이 Phase 6(실수의 구성)의 동기가 됩니다.
 """
 
-from phase04_integers import Integer
+from phase04_integers import sys
+
+def _ask(prompt):
+    """표준 입력이 터미널이 아니면(파이프·CI·에디터 실행) 대화형 모드를 건너뛴다."""
+    if not sys.stdin.isatty():
+        print(prompt + "(비대화형 실행이라 건너뜀)")
+        return "q"
+    try:
+        return input(prompt)
+    except EOFError:
+        return "q"
+import Integer
 
 
 # ============================================================================
@@ -317,7 +328,7 @@ if __name__ == "__main__":
     print("=" * 60)
     while True:
         try:
-            user_input = input("\n유리수를 입력하세요 (예: 3/4, q: 종료): ").strip()
+            user_input = _ask("\n유리수를 입력하세요 (예: 3/4, q: 종료): ").strip()
             if user_input.lower() == 'q':
                 break
             if '/' in user_input:
